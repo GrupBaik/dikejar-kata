@@ -19,6 +19,12 @@ function WaitingRoom() {
     });
   }, []);
   console.log(data.isGameMaster);
+  const start = async()=> {
+    socket.emit("CLIENT_START", { gameId, access_token: localStorage.access_token });
+    socket.on("SERVER_STARTED", (data) => {
+      console.log(data.data, "<<<<<< INI DI STA");
+    });
+  }
   return (
     <>
       <section className="w-full h-fit bg-purple-500 flex p-10 items-center flex-col relative">
@@ -34,7 +40,7 @@ function WaitingRoom() {
         {/* start */}
         {data.isGameMaster === true ? (
           <div className="w-[70%] my-4">
-            <button className="px-16 py-3 bg-blue-600">Start</button>
+            <button onClick={start} className="px-16 py-3 bg-blue-600">Start</button>
           </div>
         ) : (
           ""

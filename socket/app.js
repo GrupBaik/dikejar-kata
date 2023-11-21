@@ -16,6 +16,9 @@ const io = socketIo(server, {
 // module.exports = io
 
 
+const dataPlayer = []
+
+
 io.on("connection", (socket) => {
   console.log("client connected: ", socket.id);
 
@@ -25,22 +28,41 @@ io.on("connection", (socket) => {
 
     // check ke db apakah sudah pernah join sebelumnya
     try {
-    const {data}= await axios.get("http://localhost:3000/games/" + gameId, {
-        headers: {
-            authorization: "Bearer " + access_token
+        const {data}= await axios.get("http://localhost:3000/games/" + gameId, {
+            headers: {
+                authorization: "Bearer " + access_token
+            }
+        })
+
+        socket.join(gameId);
+        io.to(gameId).emit('SERVER_JOINED',data);
+
+
+        } catch (error) {
+            // room penuh
+            console.log(error);
+        }
+
+    })
+    socket.on('CLIENT_START', async(params) =>{
+        const {gameId, access_token} = params
+        console.log(gameId, access_token, "<<<<<client start");
+        try {
+            const {data}= await axios.get(`http://localhost:3000/games/${gameId}/start`, {
+                headers: {
+                    Authorization: "Bearer " + access_token
+                }
+            })
+            console.log(data);
+            socket.join(gameId);
+            io.to(gameId).emit('SERVER_STARTED',data);
+        } catch (error) {
+            console.log(error);
         }
     })
 
     socket.join(gameId);
-    io.to(gameId).emit('SERVER_JOINED',data);
 
-
-    } catch (error) {
-        // room penuh
-        console.log(error);
-    }
-
-    })
 
   socket.on("disconnect", (reason) => {
     console.log(reason);
