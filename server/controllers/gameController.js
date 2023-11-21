@@ -43,7 +43,7 @@ module.exports = class GameController {
       }
 
       const selectedGame = await Game.findByPk(gameId, {
-        attributes: ["id", "title", "language", "status"],
+        attributes: ["id", "status"],
         include: {
           model: Player,
           as: "players",
@@ -57,25 +57,43 @@ module.exports = class GameController {
 
       const status = selectedGame.status;
 
-      const selectedGamePlayer = GamePlayer.findOne({
+      const selectedGamePlayer = await GamePlayer.findOne({
         where: {
           GameId: gameId,
           PlayerId: userId,
         },
       });
 
-      if (status !== "waiting" && !selectedGamePlayer) {
-        throw { name: "notFound", message: "Game already started / ended" };
+      console.log(selectedGame);
+
+      if (status !== "waiting") {
+        if (!selectedGamePlayer) throw { name: "notFound", message: "Game already started / ended" };
       }
 
+      const players = selectedGame.players;
+
       if (!selectedGamePlayer) {
+        console.log(players);
+        if (players.length > 1) {
+          throw { name: "forbidden", message: "Room full" };
+        }
+
         await GamePlayer.create({
           GameId: gameId,
           PlayerId: userId,
         });
       }
 
-      const data = selectedGame.toJSON();
+      let data = await Game.findByPk(gameId, {
+        attributes: ["id", "title", "language", "status"],
+        include: {
+          model: Player,
+          as: "players",
+          attributes: ["username"],
+        },
+      });
+
+      data = data.toJSON();
       data.players = data.players.map(({ username }) => username);
 
       return res.status(200).json({ data });
